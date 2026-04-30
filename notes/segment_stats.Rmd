@@ -50,14 +50,20 @@ segmentranges <- function(pedlist) {
     
     variants = pedVariants(ped)
     peds = ibdrel::constructPedigrees(variants)
+    
+    seed = seq(1,length(peds))+20261702
 
     annotation = sapply(peds, ibdrel:::annotatePedigree)
-    sims_training <- ibdrel:::ibdSimulations(peds, N = 500, seed = NULL)
+    sims_training <- ibdrel:::ibdSimulations(peds, N = 5000, seed = seed)
     segments <- ibdrel:::lengthIBD(sims_training, peds, annotation)
 
     sapply(segments, function(x) {
       unlist(x) |> mean()
     }) -> means
+    
+    sapply(segments, function(x) {
+      sapply(x, length) |> mean()
+    }) -> counts
     
     segs <- lapply(segments, function(x) {
       unlist(x)
@@ -73,7 +79,8 @@ segmentranges <- function(pedlist) {
                                type = rep(type, npeds),
                                deg = rep(deg, npeds),
                                pathn = rep(pathn, npeds),
-                               mean = means))
+                               mean = means,
+                               count = counts))
   }
 
   return (list(df = df, allsegs = allsegs))
@@ -82,15 +89,13 @@ segmentranges <- function(pedlist) {
 
 ```{r message=FALSE}
 lpeds <- list(linearPed(2), linearPed(3), linearPed(4), linearPed(5),
-              linearPed(6), linearPed(7), linearPed(8), linearPed(9),
-              linearPed(10), linearPed(11))
-couspeds <- list(cousinPed(1), cousinPed(1, 1), cousinPed(2), cousinPed(2,1), cousinPed(3), cousinPed(3, 1), cousinPed(4), cousinPed(4, 1), cousinPed(5))
-hcouspeds <- list(avuncularPed(removal = 1), cousinPed(1, half = T), cousinPed(1, 1, half = T),
+              linearPed(6), linearPed(7), linearPed(8), linearPed(9))
+couspeds <- list(cousinPed(1), cousinPed(1, 1), cousinPed(2), cousinPed(2,1), cousinPed(3), cousinPed(3, 1), cousinPed(4))
+hcouspeds <- list(halfSibPed(), avuncularPed(half=TRUE), cousinPed(1, half = T), cousinPed(1, 1, half = T),
                   cousinPed(2, half = T), cousinPed(2, 1, half = T),
-                  cousinPed(3, half = T), cousinPed(3, 1, half = T),
-                  cousinPed(4, half = T), cousinPed(4, 1, half = T))
+                  cousinPed(3, half = T), cousinPed(3, 1, half = T))
 avpeds <- list(avuncularPed(removal = 1), avuncularPed(removal = 2), avuncularPed(removal = 3), avuncularPed(removal = 4), avuncularPed(removal = 5), avuncularPed(removal = 6),
-               avuncularPed(removal = 7), avuncularPed(removal = 8), avuncularPed(removal = 9), avuncularPed(removal = 10))
+               avuncularPed(removal = 7), avuncularPed(removal = 8))
 #havpeds <- list(avuncularPed(removal = 1, half = T), avuncularPed(removal = 2, half = T), avuncularPed(removal = 3, half = T), avuncularPed(removal = 4, half = T)) In equivalence with half cous peds
 
 lranges <- segmentranges(lpeds)
@@ -100,12 +105,108 @@ avpedranges <- segmentranges(avpeds)
 #havpedranges <- segmentranges(havpeds)
 
 pedranges <- rbind(lranges$df, cousranges$df, hcousranges$df, avpedranges$df)
+
+
 ```
+
+
+
+
+
+
+
+
+```{r}
+saveRDS(lranges, file = "lranges_all.rds")
+saveRDS(cousranges, file = "cousranges_all.rds")
+saveRDS(hcousranges, file = "hcousranges_all.rds")
+saveRDS(avpedranges, file = "avpedranges_all.rds")
+saveRDS(pedranges, file = "pedranges_all.rds")
+```
+
 
 ```{r}
 pedranges <- pedranges |> 
   mutate(type = factor(type,
-                       levels = c("direct", "half-cousin", "avuncular", "cousin")))
+                       levels = c("direct", "half-cousin", "avuncular", "cousin")),
+         deg = factor(deg)) |> 
+  mutate(mark = ifelse(ped %in% c("1C1R-mpm", "1C1R-mmp",
+                                  "h1C1R-mmpp", "h1C1R-mpmm",
+                                  "L6-mmmpp"), TRUE, NA))
+
+endpoints <- pedranges |>
+  group_by(rel, type, deg) |> 
+  summarise(lower_variant = ped[which.min(mean)],
+            lower_value = min(mean),
+            upper_variant = ped[which.max(mean)],
+            upper_value = max(mean),
+            .groups = "drop") |> 
+  mutate(lower_symbol = "♀",
+         upper_symbol = "♂") |> 
+  mutate(deg = factor(deg))
+
+ggplot() +
+  geom_linerange(data = endpoints, mapping = aes(y = deg, xmin = lower_value, xmax = upper_value, colour = deg),
+                 alpha = .5, linewidth = 1.5) +
+  geom_point(data = pedranges, mapping = aes(x = mean, y = deg, colour = deg, fill = deg)) +
+  geom_point(data = subset(pedranges, mark == TRUE), mapping = aes(x = mean, y = deg), 
+             shape = 21, size = 2, colour = "grey40", fill = NA, stroke = 1) +
+  facet_grid(rows = vars(type), scales = "free_y", switch = "y") +
+  labs(x = "Mean segment length (cM)",
+       y = "Degree",
+       colour = "Degree") +
+  scale_x_continuous(breaks = c(7.5,seq(10,75, by = 5)),
+                     labels = c(7.5, seq(10, 75, by = 5)),
+                     limits = c(7.5, 75),
+                     transform = "log2",
+                     expand = c(0,0)) +
+  scale_colour_paletteer_d("MoMAColors::Klein") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(size = 9),
+        axis.text.y = element_text(size = 9)) -> rangeplot
+rangeplot
+
+
+```
+
+
+## Identify overlap examples
+
+```{r}
+pedranges |> filter(type == "cousin", deg == 4) |> arrange(mean)
+pedranges |> filter(type == "half-cousin", deg == 5) |> arrange(mean)
+pedranges |> filter(type == "direct", deg == 6) |> arrange(mean)
+
+pedranges <- pedranges |>
+  mutate(mark = ifelse(ped %in% c("1C1R-mpm", "1C1R-mmp",
+                                  "h1C1R-mmpp", "h1C1R-mpmm",
+                                  "L6-mmmpp"), TRUE, NA))
+```
+
+```{r}
+library(pedtools)
+
+ped = cousinPed(1, removal = 1, half = T) |> swapSex(c(2,4))
+ibdrel::annotatePedigree(ped)
+
+ped = cousinPed(1, removal = 1, half = T) |> swapSex(c(4,6,9))
+ibdrel::annotatePedigree(ped)
+
+ped = cousinPed(1, removal = 1) |> swapSex(c(3,8))
+ibdrel::annotatePedigree(ped)
+
+ped = cousinPed(1, removal = 1) |> swapSex(c(3,5))
+ibdrel::annotatePedigree(ped)
+```
+
+
+
+```{r}
+pedranges <- pedranges |> 
+  mutate(type = factor(type,
+                       levels = c("direct", "half-cousin", "avuncular", "cousin")),
+         deg = factor(deg))
 
 endpoints <- pedranges |>
   group_by(rel, type, deg) |> 
@@ -119,10 +220,10 @@ endpoints <- pedranges |>
   mutate(deg = factor(deg))
 
 midpoints <- pedranges |> 
-  left_join(endpoints, by = "rel") |> 
+  left_join(endpoints, by = c("rel", "deg", "type")) |> 
   filter(mean != lower_value & mean != upper_value) |> 
-  mutate(type = type.x,
-         deg = factor(deg.x))
+  mutate(type = type,
+         deg = factor(deg))
 
 offset <- 0.125
 ggplot() +
@@ -142,7 +243,7 @@ ggplot() +
        y = "Degree",
        colour = "Degree") +
   scale_x_continuous(breaks = c(seq(5,70, by = 5)),
-                     limits = c(5, 70),
+                     limits = c(5, 100),
                      transform = "log2") +
   scale_colour_paletteer_d("MoMAColors::Klein") +
   theme_bw(base_size = 14) +
@@ -154,6 +255,8 @@ rangeplot
 
 ggsave("figures/rangeplot.pdf", plot = rangeplot, dpi = 600, device = cairo_pdf, width = 9, height = 9)
 ```
+
+
 
 
 ```{r}
