@@ -3,16 +3,22 @@ library(ggbrace)
 library(ggforce)
 library(latex2exp)
 library(pedtools)
-
+library(ibdsim2)
+library(ggplot2)
+library(paletteer)
 
 # ---- SETUP ----
 
 off <- 0.5
+s <- 1
+s2 <- s*2
 scale.factor <- 0.8
 col.vals <- c("anchor" = "#F8CECC",
               "free" = "#DAE8FC",
-              "target" = "#F8CECC",
-              "founder" = "#F5F5F5")
+              "target" = "#F5F5F5",
+              "founder" = "#F5F5F5",
+              "female" = "#d6f8cc",
+              "male" = "#f8f1cc")
 
 # Avuncular
 
@@ -24,8 +30,8 @@ nodes <- data.frame(
          "mother", "father", "desc311", "desc312",
          "desc321", "desc331", "desc341"),
   x = c(0, 2, 0, 2, 0, 0, 0,
-        4, 6, 4, 6, 4, 4, 4,
-        8, 10, 8, 10, 8, 8, 8),
+        4+s, 6+s, 4+s, 6+s, 4+s, 4+s, 4+s,
+        8+s2, 10+s2, 8+s2, 10+s2, 8+s2, 8+s2, 8+s2),
   y = c(8, 8, 6, 6, 4, 2, 0,
         8, 8, 6, 6, 4, 2, 0,
         8, 8, 6, 6, 4, 2, 0),
@@ -35,14 +41,13 @@ nodes <- data.frame(
             "circle", "square", "diamond",
             "square", "circle", "circle", "diamond",
             "square", "square", "diamond"),
-  type = c("founder", "founder", "founder", "founder",
-           "founder", "target", "founder",
-           "founder", "founder", "founder", "founder",
-           "target", "founder", "founder",
-           "founder", "founder", "target", "founder",
-           "founder", "founder", "founder")
+  type = c("founder", "founder", "male", "target",
+           "male", "female", "target",
+           "founder", "founder", "male", "target",
+           "female", "male",   "target",
+           "founder", "founder", "female", "target",
+           "male", "male", "target")
 )
-
 diamond_nodes <- nodes |>
   filter(shape == "diamond") |>
   rowwise() |>
@@ -58,14 +63,13 @@ diamond_nodes <- nodes |>
       type = .$type
     )
   })
-
 edges.top <- data.frame(
   x = c(0, 2, 1, 0, 2, 0, 2,
-        4, 6, 5, 4, 6, 4, 6,
-        8, 10, 9, 8, 10, 8, 10),
+        4+s, 6+s, 5+s, 4+s, 6+s, 4+s, 6+s,
+        8+s2, 10+s2, 9+s2, 8+s2, 10+s2, 8+s2, 10+s2),
   xend = c(1, 1, 1, 1, 1, 0, 2,
-           5, 5, 5, 5, 5, 4, 6,
-           9, 9, 9, 9, 9, 8, 10),
+           5+s, 5+s, 5+s, 5+s, 5+s, 4+s, 6+s,
+           9+s2, 9+s2, 9+s2, 9+s2, 9+s2, 8+s2, 10+s2),
   y = c(8, 8, 8, 7, 7, 7, 7,
         8, 8, 8, 7, 7, 7, 7,
         8, 8, 8, 7, 7, 7, 7),
@@ -73,14 +77,13 @@ edges.top <- data.frame(
            8, 8, 7, 7, 7, 6, 6,
            8, 8, 7, 7, 7, 6, 6)
 )
-
 edges <- data.frame(
   x = c(0, 0, 0,
-        4, 4, 4,
-        8, 8, 8),
+        4+s, 4+s, 4+s,
+        8+s2, 8+s2, 8+s2),
   xend = c(0, 0, 0,
-           4, 4, 4,
-           8, 8, 8),
+           4+s, 4+s, 4+s,
+           8+s2, 8+s2, 8+s2),
   y = c(6, 4, 2,
         6, 4, 2,
         6, 4, 2),
@@ -91,13 +94,16 @@ edges <- data.frame(
                "solid", "solid", "solid",
                "solid", "solid", "solid")
 )
-
 text <- data.frame(
-  x = c(3, 7),
-  y = c(4, 4),
+  x = c(3+s/2, 7+(s/2*3)),
+  y = c(3, 3),
   lab = c("=", "≠")
 )
-
+annot <- data.frame(
+  x = c(1,5+s,9+s2),
+  y = rep(9, 3),
+  lab = c("1", "2", "3")
+)
 ggplot() +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_segment(data = edges, aes(x = x, y = y-off*scale.factor, xend = xend, yend = yend+off*scale.factor),
@@ -113,15 +119,15 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 2, 4, 6, 8, 10), y = c(0, 6, 0, 6, 0, 6)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 2, 4+s, 6+s, 8+s2, 10+s2), y = c(0, 6, 0, 6, 0, 6)), aes(x, y)) +
   geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 10) +
+  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 6) +
   coord_equal() +
   scale_fill_manual(values = col.vals) +
   theme_void(base_size=15) +
   theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> avuncular
-
-# Cousins
+  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) -> avuncular
+avuncular
 
 nodes <- data.frame(
   id = c("mother", "father", "desc111", "desc112",
@@ -131,8 +137,8 @@ nodes <- data.frame(
          "mother", "father", "desc311", "desc312",
          "desc321", "desc322", "desc331", "desc332"),
   x = c(0, 2, 0, 2, 0, 2, 0, 0,
-        4, 6, 4, 6, 4, 6, 4, 6,
-        8, 10, 8, 10, 8, 10, 8, 10),
+        4+s, 6+s, 4+s, 6+s, 4+s, 6+s, 4+s, 6+s,
+        8+s2, 10+s2, 8+s2, 10+s2, 8+s2, 10+s2, 8+s2, 10+s2),
   y = c(8, 8, 6, 6, 4, 4, 2, 0,
         8, 8, 6, 6, 4, 4, 2, 2,
         8, 8, 6, 6, 4, 4, 2, 2),
@@ -142,13 +148,12 @@ nodes <- data.frame(
             "circle", "square", "diamond", "diamond",
             "square", "circle", "circle", "circle",
             "square", "square", "diamond", "diamond"),
-  type = c("founder", "founder", "founder", "founder",
-           "founder", "founder", "target", "founder",
-           "founder", "founder", "founder", "founder",
-           "target", "founder", "founder", "founder",
-           "founder", "founder", "target", "founder",
-           "founder", "founder", "founder", "founder"))
-
+  type = c("founder", "founder", "male", "female",
+           "male", "target", "female", "target",
+           "founder", "founder", "male", "female",
+           "female", "male", "target", "target",
+           "founder", "founder", "female", "female",
+           "male", "male", "target", "target"))
 diamond_nodes <- nodes |>
   filter(shape == "diamond") |>
   rowwise() |>
@@ -164,14 +169,13 @@ diamond_nodes <- nodes |>
       type = .$type
     )
   })
-
 edges.top <- data.frame(
   x = c(0, 2, 1, 0, 2, 0, 2,
-        4, 6, 5, 4, 6, 4, 6,
-        8, 10, 9, 8, 10, 8, 10),
+        4+s, 6+s, 5+s, 4+s, 6+s, 4+s, 6+s,
+        8+s2, 10+s2, 9+s2, 8+s2, 10+s2, 8+s2, 10+s2),
   xend = c(1, 1, 1, 1, 1, 0, 2,
-           5, 5, 5, 5, 5, 4, 6,
-           9, 9, 9, 9, 9, 8, 10),
+           5+s, 5+s, 5+s, 5+s, 5+s, 4+s, 6+s,
+           9+s2, 9+s2, 9+s2, 9+s2, 9+s2, 8+s2, 10+s2),
   y = c(8, 8, 8, 7, 7, 7, 7,
         8, 8, 8, 7, 7, 7, 7,
         8, 8, 8, 7, 7, 7, 7),
@@ -179,14 +183,13 @@ edges.top <- data.frame(
            8, 8, 7, 7, 7, 6, 6,
            8, 8, 7, 7, 7, 6, 6)
 )
-
 edges <- data.frame(
   x = c(0, 2, 0, 0,
-        4, 6, 4, 6,
-        8, 10, 8, 10),
+        4+s, 6+s, 4+s, 6+s,
+        8+s2, 10+s2, 8+s2, 10+s2),
   xend = c(0, 2, 0, 0,
-           4, 6, 4, 6,
-           8, 10, 8, 10),
+           4+s, 6+s, 4+s, 6+s,
+           8+s2, 10+s2, 8+s2, 10+s2),
   y = c(6, 6, 4, 2,
         6, 6, 4, 4,
         6, 6, 4, 4),
@@ -197,7 +200,6 @@ edges <- data.frame(
                "solid", "solid", "solid", "solid",
                "solid", "solid", "solid", "solid")
 )
-
 ggplot() +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_segment(data = edges, aes(x = x, y = y-off*scale.factor, xend = xend, yend = yend+off*scale.factor),
@@ -213,18 +215,27 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 2, 4, 6, 8, 10), y = c(0, 4, 2, 2, 2, 2)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 2, 4+s, 6+s, 8+s2, 10+s2), y = c(0, 4, 2, 2, 2, 2)), aes(x, y)) +
   geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 10) +
+  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 6) +
   coord_equal() +
   scale_fill_manual(values = col.vals) +
   theme_void(base_size=15) +
   theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> cousin
-
+  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) -> cousin
 # Simulations
+
+seed <- rep(20250902, 5)
+
+map = data.frame(chrom = c(1,1,2,2),
+                mb = c(0, 1000, 0, 1500),
+                male = c(0, 200, 0, 300),
+                female = c(0, 800, 0, 900))
+map = customMap(map)
 
 library(ibdsim2)
 library(paletteer)
+library(ggrastr)
 
 extractFeatures <- function(segments, df = T) {
 
@@ -252,64 +263,77 @@ extractFeatures <- function(segments, df = T) {
 avpeds <- list(avuncularPed(removal = 3) |> swapSex(8),
                avuncularPed(removal = 3) |> swapSex(6),
                avuncularPed(removal = 3) |> swapSex(4))
-avannot <- list("A (ppm)", "A (pmp)", "A (mpp)")
+avannot <- list("I", "II", "III")
 avmeta <- ibdrel::pedsMetadata(avpeds)
 
-avsim = ibdrel::ibdSimulations(avpeds, N = 5000)
+avsim = ibdrel::ibdSimulations(avpeds, N = 10000, seed = c(20250902, 20250903, 20250904))
 avsegs = ibdrel::lengthIBD(avsim, avpeds, avannot)
 
-avstats = extractFeatures(avsegs)
+#saveRDS(avsegs, file = "data/avsegs.rds")
+
+avsegs <- readRDS("~/relationship-equivalence-paper/data/avsegs.rds")
+
+avstats = extractFeatures(avsegs) |>
+  mutate(rel = replace(rel, rel=="I", "1"),
+         rel = replace(rel, rel=="II", "2"),
+         rel = replace(rel, rel=="III", "3"))
 
 
-plotSegmentDistribution(avsim, type = "ibd1",
-                        labels = c("Avuncular (ppm)",
-                                   "Avuncular (pmp)",
-                                   "Avuncular (mpp)"),
-                        ylab = "Mean segment length (cM)") +
-  coord_flip()
+
 
 ggplot(avstats, aes(x = mean, y = count, colour = rel)) +
-  geom_jitter(width = 0.35, alpha = .25, size = 0.5) +
-  stat_ellipse(level = 0.99, linewidth = 1.2) +
+  #geom_jitter_rast(width = 0.35, alpha = .05, size = 0.05, shape = ".") +
+  stat_ellipse(level = 0.95, linewidth = 1.2) +
   labs(x = "Mean segment length (cM)",
        y = "Number of segments",
        colour = "Pedigree") +
   scale_colour_paletteer_d("MoMAColors::Klein") +
+  scale_x_continuous(breaks = c(10,15,20,25,30),
+                     limits = c(10,35)) +
   theme_bw(base_size=15) +
   theme(legend.position = "inside",
         legend.position.inside = c(.95, .95),
         legend.justification = c("right", "top"),
-        legend.title = element_text(size = rel(.75)),
-        legend.text = element_text(size = rel(.75))) -> avsim
+        legend.title = element_text(size = rel(.5)),
+        legend.text = element_text(size = rel(.5))) -> avsim
 
 # COUSIN
 
 couspeds <- list(cousinPed(1, removal = 2) |> swapSex(c(3, 10)),
                  cousinPed(2) |> swapSex(c(5, 7)),
                  cousinPed(2) |> swapSex(c(3,5)))
-cousannot <- list("1C2R (mppm)",
-                  "2C (mpmp)",
-                  "2C (pmmp)")
+cousannot <- list("I",
+                  "II",
+                  "III")
 cousmeta <- ibdrel::pedsMetadata(couspeds)
 
-coussim <- ibdrel::ibdSimulations(couspeds, N = 5000)
+coussim <- ibdrel::ibdSimulations(couspeds, N = 10000, seed = c(20250902, 20250903, 20250904))
 coussegs = ibdrel::lengthIBD(coussim, couspeds, cousannot)
 
-cousstats = extractFeatures(coussegs)
+#saveRDS(coussegs, file = "data/coussegs.rds")
+
+coussegs = readRDS("~/relationship-equivalence-paper/data/coussegs.rds")
+
+cousstats = extractFeatures(coussegs) |>
+  mutate(rel = replace(rel, rel=="I", "1"),
+         rel = replace(rel, rel=="II", "2"),
+         rel = replace(rel, rel=="III", "3"))
 
 ggplot(cousstats, aes(x = mean, y = count, colour = rel)) +
-  geom_jitter(width = 0.35, alpha = .25, size = 0.5) +
-  stat_ellipse(level = 0.99, linewidth = 1.2) +
+  #geom_jitter_rast(width = 0.35, alpha = .05, size = 0.05, shape = ".") +
+  stat_ellipse(level = 0.95, linewidth = 1.2) +
   labs(x = "Mean segment length (cM)",
        y = "Number of segments",
        colour = "Pedigree") +
   scale_colour_paletteer_d("MoMAColors::Klein") +
+  scale_x_continuous(breaks = c(10,15,20,25),
+                     limits = c(7,27)) +
   theme_bw(base_size=15) +
   theme(legend.position = "inside",
         legend.position.inside = c(.95, .95),
         legend.justification = c("right", "top"),
-        legend.title = element_text(size = rel(.75)),
-        legend.text = element_text(size = rel(.75))) -> csim
+        legend.title = element_text(size = rel(.5)),
+        legend.text = element_text(size = rel(.5))) -> csim
 
 # Very similar. Need to measure actual difference.
 
@@ -322,15 +346,26 @@ ks.test(f[[1]]$mean, f[[2]]$mean)
 ks.test(f[[1]]$mean, f[[3]]$mean)
 ks.test(f[[2]]$mean, f[[3]]$mean)
 
+
+kde.test(x1=unlist(coussegs$I),x2=unlist(coussegs$II))
+
+library(energy)
+x1 <- scale(as.matrix(cbind(f[[1]]$count,f[[1]]$mean)))
+x2 <- scale(as.matrix(cbind(f[[2]]$count,f[[2]]$mean)))
+x3 <- scale(as.matrix(cbind(f[[3]]$count,f[[3]]$mean)))
+
+eqdist.etest(rbind(x2,x3),sizes=c(nrow(x2),nrow(x3)),R=50)
+
 # PATHCWORK
 
 library(patchwork)
 
-p <- (avuncular | avsim) / (cousin | csim) &
-  plot_annotation(tag_levels = "A")
+p <- (avuncular | avsim) / (cousin | csim) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(size = 24,family="sans"))
 p
 
 # Save
 
-ggsave("figures/example_sims.pdf", dpi = 600, plot = p, width = 9, height = 8,
+ggsave("figures/example_sims.pdf", plot = p, width = 9, height = 8,
        device = cairo_pdf)

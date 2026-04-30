@@ -2,6 +2,11 @@ library(tidyverse)
 library(ggbrace)
 library(ggforce)
 library(latex2exp)
+library(showtext)
+
+
+sysfonts::font_add_google("Noto Sans Math", "notomath")
+showtext_auto()
 
 # ---- SETUP ----
 
@@ -17,7 +22,7 @@ col.vals <- c("anchor" = "#F8CECC",
 nodes <- data.frame(
   id = c("founder", "desc1", "desc2", "desc3"),
   x = c(0, 0, 0, 0),
-  y = c(6, 4, 2, 0),
+  y = c(8, 6, 4, 2),
   shape = c("diamond", "diamond", "diamond", "diamond"),
   type = c("target", "free", "free", "target")
 )
@@ -41,8 +46,8 @@ diamond_nodes <- nodes |>
 edges <- data.frame(
   x = c(0, 0, 0),
   xend = c(0, 0, 0),
-  y = c(6, 4, 2),
-  yend = c(4, 2, 0),
+  y = c(8, 6, 4),
+  yend = c(6, 4, 2),
   linetype = c("solid", "dashed", "solid")
 )
 
@@ -53,18 +58,21 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 0), y = c(0, 6)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 0), y = c(2, 8)), aes(x, y)) +
   geom_segment(data = edges, aes(x = x, y = y-off, xend = xend, yend = yend+off),
                linetype = edges$linetype) +
-  stat_brace(data = data.frame(x = c(0, 0), y = c(4.5, 1.5)), mapping = aes(x = x, y = y),
+  stat_brace(data = data.frame(x = c(0, 0), y = c(6.5, 3.5)), mapping = aes(x = x, y = y),
              rotate = 270, outerstart = -0.5, width = .5) +
-  stat_bracetext(data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n")),
+  stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n$", italic = T)),
                  rotate = 270, outerstart = 0) +
+  geom_text(data = data.frame(x = c(0,0), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+1$", italic = T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=14) +
-  theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> direct
+  theme_void(base_size=20,
+             base_family = "serif") +
+  theme(legend.position = "none",
+        plot.margin = margin(0,0.5,0,0, unit = "in")) +
+  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> direct
 direct
 
 # --- HALF-SIB ----
@@ -73,7 +81,7 @@ direct
 nodes <- data.frame(
   id = c("founder", "desc11", "desc12", "desc21", "desc22", "desc31", "desc32"),
   x = c(1, 0, 2, 0, 2, 0, 2),
-  y = c(6, 4, 4, 2, 2, 0, 0),
+  y = c(8, 6, 6, 4, 4, 2, 2),
   shape = c("diamond", "diamond", "diamond", "diamond", "diamond", "diamond", "diamond"),
   type = c("anchor", "free", "free", "free", "free", "target", "target")
 )
@@ -97,15 +105,15 @@ diamond_nodes <- nodes |>
 edges.top <- data.frame(
   x = c(1-off, 1+off, 0, 2),
   xend = c(0, 2, 0, 2),
-  y = c(6, 6, 6, 6),
-  yend = c(6, 6, 4+off, 4+off)
+  y = c(8, 8, 8, 8),
+  yend = c(8, 8, 6+off, 6+off)
 )
 
 edges <- data.frame(
   x = c(0, 2, 0, 2),
   xend = c(0, 2, 0, 2),
-  y = c(4, 4, 2, 2),
-  yend = c(2, 2, 0, 0),
+  y = c(6, 6, 4, 4),
+  yend = c(4, 4, 2, 2),
   linetype = c("dashed", "dashed", "solid", "solid")
 )
 
@@ -115,23 +123,26 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 2), y = c(0, 0)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 2), y = c(2, 2)), aes(x, y)) +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_segment(data = edges, aes(x = x, y = y-off, xend = xend, yend = yend+off),
               linetype = edges$linetype) +
-  stat_brace(data = data.frame(x = c(0, 0), y = c(4.5, 1.5)), mapping = aes(x = x, y = y),
+  stat_brace(data = data.frame(x = c(0, 0), y = c(6.5, 3.5)), mapping = aes(x = x, y = y),
              rotate = 270, outerstart = -0.5, width = .5) +
-  stat_brace(data = data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y),
+  stat_brace(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y),
              rotate = 90, outerstart = 2.5, width = .5) +
-  stat_bracetext(data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n_1")),
+  stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_1$", italic=T)),
                  rotate = 270, outerstart = 0) +
-  stat_bracetext(data = data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n_2")),
+  stat_bracetext(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_2$", italic=T)),
                  rotate = 90, outerstart = 2) +
+  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+2$",italic=T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=14) +
-  theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> hsib
+  theme_void(base_size=20,
+             base_family="serif") +
+  theme(legend.position = "none",
+        plot.margin = margin(0,0.5,0,0, unit = "in")) +
+  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> hsib
 hsib
 
 # --- AVUNCULAR TYPE ----
@@ -140,7 +151,7 @@ nodes <- data.frame(
   id = c("mother", "father", "desc11", "desc12",
          "desc21", "desc31", "desc41"),
   x = c(0, 2, 0, 2, 0, 0, 0),
-  y = c(8, 8, 6, 6, 4, 2, 0),
+  y = c(10, 10, 8, 8, 6, 4, 2),
   shape = c("square", "circle", "diamond", "diamond",
             "diamond", "diamond", "diamond"),
   type = c("founder", "founder", "anchor", "target",
@@ -166,15 +177,15 @@ diamond_nodes <- nodes |>
 edges.top <- data.frame(
   x = c(0+off*scale.factor, 2-off*scale.factor, 1, 0, 2, 0, 2),
   xend = c(1, 1, 1, 1, 1, 0, 2),
-  y = c(8, 8, 8, 7, 7, 7, 7),
-  yend = c(8, 8, 7, 7, 7, 6+off, 6+off)
+  y = c(10, 10, 10, 9, 9, 9, 9),
+  yend = c(10, 10, 9, 9, 9, 8+off, 8+off)
 )
 
 edges <- data.frame(
   x = c(0, 0, 0),
   xend = c(0, 0, 0),
-  y = c(6, 4, 2),
-  yend = c(4, 2, 0),
+  y = c(8, 6, 4),
+  yend = c(6, 4, 2),
   linetype = c("solid", "dashed", "solid")
 )
 
@@ -190,19 +201,23 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 2), y = c(0, 6)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 2), y = c(2, 8)), aes(x, y)) +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_segment(data = edges, aes(x = x, y = y-off, xend = xend, yend = yend+off),
                linetype = edges$linetype) +
-  stat_brace(data = data.frame(x = c(0, 0), y = c(4.5, 1.5)), mapping = aes(x = x, y = y),
-             rotate = 270, outerstart = -0.5, width = .5) +
-  stat_bracetext(data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n")),
-                 rotate = 270, outerstart = 0) +
+  stat_brace(data = data.frame(x = c(0, 0), y = c(6.5, 3.5)), mapping = aes(x = x, y = y),
+             rotate = 90, outerstart = 0.5, width = .5) +
+  stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n$",italic=T)),
+                 rotate = 90, outerstart = 0) +
+  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+2$",italic=T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=14) +
-  theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> avuncular
+  theme_void(base_size=20,
+             base_family = "serif") +
+  theme(legend.position = "none",
+        plot.margin = margin(0,0.5,0,0, unit = "in")) +
+  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> avuncular
+avuncular
 
 # --- COUSIN TYPE ----
 
@@ -213,9 +228,9 @@ nodes <- data.frame(
   x = c(0, 2, 0, 2,
         0, 2, 0, 2,
         0, 2),
-  y = c(8, 8, 6, 6,
-        4, 4, 2, 2,
-        0, 0),
+  y = c(10, 10, 8, 8,
+        6, 6, 4, 4,
+        2, 2),
   shape = c("square", "circle", "diamond", "diamond",
             "diamond", "diamond", "diamond", "diamond",
             "diamond", "diamond"),
@@ -243,15 +258,15 @@ diamond_nodes <- nodes |>
 edges.top <- data.frame(
   x = c(0+off*scale.factor, 2-off*scale.factor, 1, 0, 2, 0, 2),
   xend = c(1, 1, 1, 1, 1, 0, 2),
-  y = c(8, 8, 8, 7, 7, 7, 7),
-  yend = c(8, 8, 7, 7, 7, 6+off, 6+off)
+  y = c(10, 10, 10, 9, 9, 9, 9),
+  yend = c(10, 10, 9, 9, 9, 8+off, 8+off)
 )
 
 edges <- data.frame(
   x = c(0, 2, 0, 2, 0, 2),
   xend = c(0, 2, 0, 2, 0, 2),
-  y = c(6, 6, 4, 4, 2, 2),
-  yend = c(4, 4, 2, 2, 0, 0),
+  y = c(8, 8, 6, 6, 4, 4),
+  yend = c(6, 6, 4, 4, 2, 2),
   linetype = c("solid", "solid","dashed", "dashed",
                "solid", "solid")
 )
@@ -268,30 +283,34 @@ ggplot() +
     aes(x = x, y = y, group = id, fill = type),
     color = "black"
   ) +
-  geom_point(data = data.frame(x = c(0, 2), y = c(0, 0)), aes(x, y)) +
+  geom_point(data = data.frame(x = c(0, 2), y = c(2, 2)), aes(x, y)) +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_segment(data = edges, aes(x = x, y = y-off, xend = xend, yend = yend+off),
                linetype = edges$linetype) +
-  stat_brace(data = data.frame(x = c(0, 0), y = c(4.5, 1.5)), mapping = aes(x = x, y = y),
+  stat_brace(data = data.frame(x = c(0, 0), y = c(6.5, 3.5)), mapping = aes(x = x, y = y),
              rotate = 270, outerstart = -0.5, width = .5) +
-  stat_brace(data = data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y),
+  stat_brace(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y),
              rotate = 90, outerstart = 2.5, width = .5) +
-  stat_bracetext(data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n_1")),
+  stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_1$",italic=T)),
                  rotate = 270, outerstart = 0) +
-  stat_bracetext(data = data.frame(x = c(2, 2), y = c(4.5, 1.5)), mapping = aes(x, y, label = latex2exp::TeX("$n_2")),
+  stat_bracetext(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_2$",italic=T)),
                  rotate = 90, outerstart = 2) +
+  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+3$", italic = T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=14) +
-  theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 9), expand = c(0, 0)) -> cousin
-
+  theme_void(base_size=20,
+             base_family="serif") +
+  theme(legend.position = "none",
+        plot.margin = margin(0,0,0,0, unit = "in")) +
+  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> cousin
+cousin
 
 # Path plots
 library(patchwork)
 
-p <- direct | hsib | avuncular | cousin |
-  plot_annotation(tag_levels = "A")
+p <- (direct | hsib | avuncular| cousin) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(size = 24,family="sans"))
 p
 ggsave("figures/peds_unilineal.emf")
 ggsave("figures/peds_unilineal.png")
