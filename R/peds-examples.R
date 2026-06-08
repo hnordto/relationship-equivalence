@@ -1,11 +1,15 @@
+# ---- FIGURE 2 ----
+
 library(tidyverse)
 library(ggbrace)
 library(ggforce)
 library(latex2exp)
 library(pedtools)
-library(ibdsim2)
-library(ggplot2)
 library(paletteer)
+
+library(ibdsim2)
+library(ibdrel)
+library(patchwork)
 
 # ---- SETUP ----
 
@@ -102,7 +106,7 @@ text <- data.frame(
 annot <- data.frame(
   x = c(1,5+s,9+s2),
   y = rep(9, 3),
-  lab = c("1", "2", "3")
+  lab = c("I", "II", "III")
 )
 ggplot() +
   geom_segment(data = edges.top, aes(x = x, y = y, xend = xend, yend = yend)) +
@@ -120,13 +124,15 @@ ggplot() +
     color = "black"
   ) +
   geom_point(data = data.frame(x = c(0, 2, 4+s, 6+s, 8+s2, 10+s2), y = c(0, 6, 0, 6, 0, 6)), aes(x, y)) +
-  geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 10) +
-  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 6) +
+  geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 24, size.unit = "pt") +
+  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 11, size.unit = "pt", family = "serif") +
   coord_equal() +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=15) +
+  theme_void(base_size=11) +
   theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) -> avuncular
+  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  theme(plot.margin = margin(0,0,0,0))-> avuncular
 avuncular
 
 nodes <- data.frame(
@@ -216,27 +222,19 @@ ggplot() +
     color = "black"
   ) +
   geom_point(data = data.frame(x = c(0, 2, 4+s, 6+s, 8+s2, 10+s2), y = c(0, 4, 2, 2, 2, 2)), aes(x, y)) +
-  geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 10) +
-  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 6) +
+  geom_text(data = text, mapping = aes(x = x, y = y, label = lab), size = 24, size.unit = "pt") +
+  geom_text(data = annot, mapping = aes(x, y, label = lab), size = 11, size.unit = "pt", family = "serif") +
   coord_equal() +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=15) +
+  theme_void(base_size=11) +
   theme(legend.position = "none") +
-  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) -> cousin
+  scale_y_continuous(limits = c(-1, 10), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  theme(plot.margin = margin(0,0,0,0)) -> cousin
+cousin
+
+
 # Simulations
-
-seed <- rep(20250902, 5)
-
-map = data.frame(chrom = c(1,1,2,2),
-                mb = c(0, 1000, 0, 1500),
-                male = c(0, 200, 0, 300),
-                female = c(0, 800, 0, 900))
-map = customMap(map)
-
-library(ibdsim2)
-library(paletteer)
-library(ggrastr)
-
 extractFeatures <- function(segments, df = T) {
 
   features <- lapply(segments, function(x) {
@@ -260,112 +258,83 @@ extractFeatures <- function(segments, df = T) {
 }
 
 # AVUNCULAR
-avpeds <- list(avuncularPed(removal = 3) |> swapSex(8),
-               avuncularPed(removal = 3) |> swapSex(6),
-               avuncularPed(removal = 3) |> swapSex(4))
+avpeds <- list(avuncularPed(removal = 3) |> swapSex(c(8, 10)),
+               avuncularPed(removal = 3) |> swapSex(c(6, 10)),
+               avuncularPed(removal = 3) |> swapSex(c(4, 10)))
 avannot <- list("I", "II", "III")
 avmeta <- ibdrel::pedsMetadata(avpeds)
 
-avsim = ibdrel::ibdSimulations(avpeds, N = 10000, seed = c(20250902, 20250903, 20250904))
+avsim = ibdrel::ibdSimulations(avpeds, N = 100000, seed = c(20250902, 20250903, 20250904))
 avsegs = ibdrel::lengthIBD(avsim, avpeds, avannot)
 
 #saveRDS(avsegs, file = "data/avsegs.rds")
 
-avsegs <- readRDS("~/relationship-equivalence-paper/data/avsegs.rds")
-
-avstats = extractFeatures(avsegs) |>
-  mutate(rel = replace(rel, rel=="I", "1"),
-         rel = replace(rel, rel=="II", "2"),
-         rel = replace(rel, rel=="III", "3"))
-
-
-
-
-ggplot(avstats, aes(x = mean, y = count, colour = rel)) +
-  #geom_jitter_rast(width = 0.35, alpha = .05, size = 0.05, shape = ".") +
-  stat_ellipse(level = 0.95, linewidth = 1.2) +
-  labs(x = "Mean segment length (cM)",
-       y = "Number of segments",
-       colour = "Pedigree") +
-  scale_colour_paletteer_d("MoMAColors::Klein") +
-  scale_x_continuous(breaks = c(10,15,20,25,30),
-                     limits = c(10,35)) +
-  theme_bw(base_size=15) +
-  theme(legend.position = "inside",
-        legend.position.inside = c(.95, .95),
-        legend.justification = c("right", "top"),
-        legend.title = element_text(size = rel(.5)),
-        legend.text = element_text(size = rel(.5))) -> avsim
+#avsegs <- readRDS("~/relationship-equivalence-paper/data/avsegs.rds")
 
 # COUSIN
 
-couspeds <- list(cousinPed(1, removal = 2) |> swapSex(c(3, 10)),
-                 cousinPed(2) |> swapSex(c(5, 7)),
-                 cousinPed(2) |> swapSex(c(3,5)))
+couspeds <- list(cousinPed(1, removal = 2) |> swapSex(c(3, 10,12)),
+                 cousinPed(2) |> swapSex(c(5, 7,12)),
+                 cousinPed(2) |> swapSex(c(3,5,12)))
 cousannot <- list("I",
                   "II",
                   "III")
 cousmeta <- ibdrel::pedsMetadata(couspeds)
 
-coussim <- ibdrel::ibdSimulations(couspeds, N = 10000, seed = c(20250902, 20250903, 20250904))
+coussim <- ibdrel::ibdSimulations(couspeds, N = 100000, seed = c(20250902, 20250903, 20250904))
 coussegs = ibdrel::lengthIBD(coussim, couspeds, cousannot)
 
 #saveRDS(coussegs, file = "data/coussegs.rds")
-
-coussegs = readRDS("~/relationship-equivalence-paper/data/coussegs.rds")
-
-cousstats = extractFeatures(coussegs) |>
-  mutate(rel = replace(rel, rel=="I", "1"),
-         rel = replace(rel, rel=="II", "2"),
-         rel = replace(rel, rel=="III", "3"))
-
-ggplot(cousstats, aes(x = mean, y = count, colour = rel)) +
-  #geom_jitter_rast(width = 0.35, alpha = .05, size = 0.05, shape = ".") +
-  stat_ellipse(level = 0.95, linewidth = 1.2) +
-  labs(x = "Mean segment length (cM)",
-       y = "Number of segments",
-       colour = "Pedigree") +
-  scale_colour_paletteer_d("MoMAColors::Klein") +
-  scale_x_continuous(breaks = c(10,15,20,25),
-                     limits = c(7,27)) +
-  theme_bw(base_size=15) +
-  theme(legend.position = "inside",
-        legend.position.inside = c(.95, .95),
-        legend.justification = c("right", "top"),
-        legend.title = element_text(size = rel(.5)),
-        legend.text = element_text(size = rel(.5))) -> csim
-
-# Very similar. Need to measure actual difference.
-
-f <- extractFeatures(coussegs, F)
-
-ks.test(f[[1]]$count, f[[2]]$count)
-ks.test(f[[1]]$count, f[[3]]$count)
-ks.test(f[[2]]$count, f[[3]]$count)
-ks.test(f[[1]]$mean, f[[2]]$mean)
-ks.test(f[[1]]$mean, f[[3]]$mean)
-ks.test(f[[2]]$mean, f[[3]]$mean)
+#coussegs = readRDS("data/coussegs.rds")
 
 
-kde.test(x1=unlist(coussegs$I),x2=unlist(coussegs$II))
+sim_theme = theme_bw(base_size = 11) +
+  theme_sub_plot(
+    margin = margin(t = 0.5, l = 1, r = 0.1, 0, unit = "lines")
+  ) +
+  theme_sub_legend(
+    title = element_blank(),
+    text = element_text(family = "serif"),
+    position = "inside",
+    position.inside = c(.995, .995),
+    justification.inside = c(1, 1),
+    key.width = unit(1.05, "cm"),
+    key.height = unit(0.8, "lines")
+  )
 
-library(energy)
-x1 <- scale(as.matrix(cbind(f[[1]]$count,f[[1]]$mean)))
-x2 <- scale(as.matrix(cbind(f[[2]]$count,f[[2]]$mean)))
-x3 <- scale(as.matrix(cbind(f[[3]]$count,f[[3]]$mean)))
+sim_plot = function(segs, breaks, xlim) {
+  dat = extractFeatures(segs)
+  ggplot(dat, aes(x = mean, y = count, colour = rel, linetype = rel)) +
+    stat_ellipse(level = 0.95, linewidth = 1.2) +
+    labs(x = "Mean segment length (cM)",
+         y = "Number of segments") +
+    scale_colour_paletteer_d(
+      "MoMAColors::Clay",
+      guide = guide_legend(override.aes = list(linewidth = 0.9))
+    ) +
+    scale_linetype_manual(values = c("solid", "dashed", "dotdash")) +
+    scale_x_continuous(breaks = breaks) +
+    coord_cartesian(xlim = xlim) +
+    sim_theme
+}
 
-eqdist.etest(rbind(x2,x3),sizes=c(nrow(x2),nrow(x3)),R=50)
+pad = function(x, gap = 1) {
+  wrap_elements(full = x + theme(plot.margin = margin(0, gap, gap, 2*gap, unit = "cm")))
+}
 
-# PATHCWORK
+#avsegs = readRDS("data/avsegs.rds")
+#coussegs = readRDS("data/coussegs.rds")
 
-library(patchwork)
+avsim = sim_plot(avsegs, c(10, 15, 20, 25, 30, 35), c(10, 35))
+csim = sim_plot(coussegs, c(10, 15, 20, 25), c(7, 27))
 
-p <- (avuncular | avsim) / (cousin | csim) +
-  plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(size = 24,family="sans"))
+# Combine plots
+p = (pad(avuncular, 0.25) + avsim) / (pad(cousin, 0.25) + csim) +
+  plot_annotation(tag_levels = "A",
+                  theme = theme(
+                    plot.tag = element_text(size = 16))
+  )
+
 p
 
-# Save
-
-ggsave("figures/example_sims.pdf", plot = p, width = 9, height = 8,
-       device = cairo_pdf)
+#ggsave("figures/Figure_2.pdf", plot = p, width = 7.5, height = 6.5, units = "in", device = cairo_pdf)

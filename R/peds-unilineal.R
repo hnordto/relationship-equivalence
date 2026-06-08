@@ -1,3 +1,5 @@
+# ---- FIGURE 1 ----
+
 library(tidyverse)
 library(ggbrace)
 library(ggforce)
@@ -65,14 +67,16 @@ ggplot() +
              rotate = 270, outerstart = -0.5, width = .5) +
   stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n$", italic = T)),
                  rotate = 270, outerstart = 0) +
-  geom_text(data = data.frame(x = c(0,0), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+1$", italic = T))) +
+  #geom_text(data = data.frame(x = c(0,0), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+1$", italic = T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=20,
+  theme_void(base_size=11,
              base_family = "serif") +
   theme(legend.position = "none",
-        plot.margin = margin(0,0.5,0,0, unit = "in")) +
-  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> direct
+        plot.margin = margin(0,0.5,0,0, unit = "in"),
+        plot.title = element_text(hjust = 0.75, size = 14)) +
+  labs(title = "D") +
+  scale_y_continuous(limits = c(1, 11), expand = c(0, 0)) -> direct
 direct
 
 # --- HALF-SIB ----
@@ -135,14 +139,16 @@ ggplot() +
                  rotate = 270, outerstart = 0) +
   stat_bracetext(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_2$", italic=T)),
                  rotate = 90, outerstart = 2) +
-  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+2$",italic=T))) +
+  #geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+2$",italic=T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=20,
+  theme_void(base_size=11,
              base_family="serif") +
   theme(legend.position = "none",
-        plot.margin = margin(0,0.5,0,0, unit = "in")) +
-  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> hsib
+        plot.margin = margin(0,0.5,0,0, unit = "in"),
+        plot.title = element_text(hjust = 0.5, size = 14)) +
+  labs(title = "H") +
+  scale_y_continuous(limits = c(1, 11), expand = c(0, 0)) -> hsib
 hsib
 
 # --- AVUNCULAR TYPE ----
@@ -209,14 +215,16 @@ ggplot() +
              rotate = 90, outerstart = 0.5, width = .5) +
   stat_bracetext(data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n$",italic=T)),
                  rotate = 90, outerstart = 0) +
-  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+2$",italic=T))) +
+  #geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n+2$",italic=T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=20,
+  theme_void(base_size=11,
              base_family = "serif") +
   theme(legend.position = "none",
-        plot.margin = margin(0,0.5,0,0, unit = "in")) +
-  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> avuncular
+        plot.margin = margin(0,0.5,0,0, unit = "in"),
+        plot.title = element_text(hjust = 0.5, size = 14)) +
+  labs(title = "A") +
+  scale_y_continuous(limits = c(1, 11), expand = c(0, 0)) -> avuncular
 avuncular
 
 # --- COUSIN TYPE ----
@@ -295,24 +303,25 @@ ggplot() +
                  rotate = 270, outerstart = 0) +
   stat_bracetext(data = data.frame(x = c(2, 2), y = c(6.5, 3.5)), mapping = aes(x, y, label = TeX("$n_2$",italic=T)),
                  rotate = 90, outerstart = 2) +
-  geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+3$", italic = T))) +
+  #geom_text(data = data.frame(x = c(1,1), y = c(0,0)), mapping = aes(x = x, y = y, label = TeX("$d=n_1+n_2+3$", italic = T))) +
   coord_equal(clip = "off") +
   scale_fill_manual(values = col.vals) +
-  theme_void(base_size=20,
+  theme_void(base_size=11,
              base_family="serif") +
   theme(legend.position = "none",
-        plot.margin = margin(0,0,0,0, unit = "in")) +
-  scale_y_continuous(limits = c(-1, 11), expand = c(0, 0)) -> cousin
+        plot.margin = margin(0,0,0,0, unit = "in"),
+        plot.title = element_text(hjust = 0.5, size = 14)) +
+  labs(title = "C") +
+  scale_y_continuous(limits = c(1, 11), expand = c(0, 0)) -> cousin
 cousin
 
 # Path plots
 library(patchwork)
 
-p <- (direct | hsib | avuncular| cousin) +
-  plot_annotation(tag_levels = "A") &
+p <- (direct | hsib | avuncular| cousin) &
   theme(plot.tag = element_text(size = 24,family="sans"))
 p
-ggsave("figures/peds_unilineal.emf")
-ggsave("figures/peds_unilineal.png")
-ggsave("figures/peds_unilineal.pdf", width = 12, height = 6)
+#ggsave("figures/peds_unilineal.emf")
+#ggsave("figures/peds_unilineal.png")
+#ggsave("figures/Figure_1.pdf", width = 200, height = 100, units = "mm", dpi = 1000, device = cairo_pdf)
 
